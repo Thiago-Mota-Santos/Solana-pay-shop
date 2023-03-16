@@ -4,7 +4,7 @@ import "./styles/App.css";
 import SolanaConnect from "./wallet/SolanaConnect";
 import { PublicKey } from "@solana/web3.js";
 import { useWallet } from "@solana/wallet-adapter-react";
-import Product, { ProductProps } from "./components/products";
+import Product from "./components/products";
 import {
   useWalletModal,
   WalletMultiButton,
@@ -12,13 +12,25 @@ import {
 import RootLayout from "./layout";
 import { useEffect, useState } from "react";
 
+interface ProductProps {
+  productsNoHashes: {
+    id: number;
+    name: string;
+    price: number;
+    description: string;
+    image_url: string;
+    filename: string;
+    hash: string;
+  }[];
+}
+
 function Container() {
   const { publicKey } = useWallet();
-  const [products, setProducts] = useState<ProductProps[]>();
+  const [products, setProducts] = useState<ProductProps>();
 
   useEffect(() => {
     if (publicKey) {
-      fetch(`../api/fetch/fetchProducts`)
+      fetch(`/api/fetch/`)
         .then((response) => response.json())
         .then((data) => {
           setProducts(data);
@@ -41,7 +53,7 @@ function Container() {
 
   const renderItemBuyContainer = () => (
     <div className="products-container">
-      <Product
+      {/* <Product
         id={0}
         name={""}
         image_url={""}
@@ -49,19 +61,30 @@ function Container() {
         description={""}
         filename={""}
         hash={""}
-      />
-      {/* {products?.map((product) => (
+      /> */}
+
+      {products?.productsNoHashes.map((product) => (
         <Product
-          key={product.id}
-          id={product.id}
-          name="aloo filho da puta"
+          id={0}
+          name={product.name}
           image_url={product.image_url}
           price={product.price}
           description={product.description}
-          filename={product.filename}
-          hash={product.hash}
+          filename={""}
+          hash={""}
         />
-      ))} */}
+      ))}
+
+      {/* <Product
+        key={0}
+        id={0}
+        name={products?.name}
+        image_url={""}
+        price={0.06}
+        description={"Obtenha um pack com as minhas artes favoritas de Jojo"}
+        filename={"kk"}
+        hash={"kk"}
+      /> */}
     </div>
   );
 
@@ -74,8 +97,8 @@ function Container() {
         </header>
 
         <main>
-          {/* {publicKey ? renderItemBuyContainer() : renderNotConnectedContainer()} */}
-          {renderItemBuyContainer()}
+          {publicKey ? renderItemBuyContainer() : renderNotConnectedContainer()}
+          {/* {renderItemBuyContainer()} */}
 
           {/* <img
             className="gif-image"
