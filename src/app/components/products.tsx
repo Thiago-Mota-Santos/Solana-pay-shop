@@ -27,7 +27,7 @@ export default function Product(product: ProductProps) {
 
         <div className={styles.product_action}>
           <div className={styles.product_price}>{price} USDC</div>
-          <Buy itemId={id} />
+          <Buy itemID={id} />
         </div>
       </div>
     </div>

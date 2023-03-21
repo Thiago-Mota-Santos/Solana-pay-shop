@@ -16,34 +16,27 @@ export default function Buy({ itemID }) {
 
   const order = useMemo(
     () => ({
-      buyer: publicKey?.toString(),
+      buyer: publicKey.toString(),
       orderID: orderID.toString(),
       itemID: itemID,
     }),
     [publicKey, orderID, itemID]
   );
 
-  console.log(order);
-
   // Pegue o objeto transação do servidor
   const processTransaction = async () => {
     setLoading(true);
-    const txResponse = await fetch(`api/transation/route`, {
+    const txResponse = await fetch("../api/createTransaction", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        buyer: publicKey?.toString(),
-        orderID: orderID.toString(),
-        itemID: itemID,
-      }),
+      body: JSON.stringify(order),
     });
     const txData = await txResponse.json();
-    console.log(txData);
+
     // Nós criamos um objeto transação
     const tx = Transaction.from(Buffer.from(txData.transaction, "base64"));
-
     console.log("Tx data is", tx);
 
     // Tente enviar a transação para a rede
@@ -80,6 +73,7 @@ export default function Buy({ itemID }) {
         <IPFSDownload
           filename="emojis.zip"
           hash="QmWWH69mTL66r3H8P4wUn24t1L5pvdTJGUTKBqT11KCHS5"
+          cta="Download emojis"
         />
       ) : (
         <button

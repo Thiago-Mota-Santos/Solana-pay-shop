@@ -13,24 +13,22 @@ import RootLayout from "./layout";
 import { useEffect, useState } from "react";
 
 interface ProductProps {
-  productsNoHashes: {
-    id: number;
-    name: string;
-    price: number;
-    description: string;
-    image_url: string;
-    filename: string;
-    hash: string;
-  }[];
+  id: number;
+  name: string;
+  price: number;
+  description: string;
+  image_url: string;
+  filename: string;
+  hash: string;
 }
 
 function Container() {
   const { publicKey } = useWallet();
-  const [products, setProducts] = useState<ProductProps>();
+  const [products, setProducts] = useState<ProductProps[]>();
 
   useEffect(() => {
     if (publicKey) {
-      fetch(`/api/fetch/`)
+      fetch(`/api/fetch/route`)
         .then((response) => response.json())
         .then((data) => {
           setProducts(data);
@@ -63,7 +61,7 @@ function Container() {
         hash={""}
       /> */}
 
-      {products?.productsNoHashes.map((product) => (
+      {products?.map((product) => (
         <Product
           id={0}
           name={product.name}
