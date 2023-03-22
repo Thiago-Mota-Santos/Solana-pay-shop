@@ -81,7 +81,7 @@ export default function Buy({ itemID }: BuyProps) {
             clearInterval(interval);
             setStatus(STATUS.Paid);
             setLoading(false);
-            addOrder(order);
+            // addOrder(order);
             alert("Obrigado por sua compra!");
           }
         } catch (e) {

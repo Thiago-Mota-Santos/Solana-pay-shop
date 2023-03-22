@@ -1,4 +1,10 @@
-export const addOrder = async (order) => {
+interface orderProps{
+    buyer?: string;
+    orderID: string;
+    itemID: number;
+}
+
+export const addOrder = async (order: orderProps) => {
     await fetch('/api/order/route', {
         method: 'POST',
         headers:{

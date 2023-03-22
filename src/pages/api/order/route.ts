@@ -3,11 +3,12 @@ import { writeFile } from "fs/promises";
 
 function get(req, res) {
   const { buyer } = req.query;
+  console.log(req.query, buyer);
 
-  // Verifique se este endereço tem algum pedido
+  console.log(buyer);
+
   const buyerOrders = orders.filter((order) => order.buyer === buyer);
   if (buyerOrders.length === 0) {
-    // 204 = processou a solicitação com sucesso, não retornando nenhum conteúdo
     res.status(204).send();
   } else {
     res.status(200).json(buyerOrders);
@@ -16,14 +17,15 @@ function get(req, res) {
 
 async function post(req, res) {
   console.log("Pedido de adição de pedido recebido", req.body);
-  // Adicionar novo pedido a orders.json
   try {
     const newOrder = req.body;
+    console.log(newOrder);
 
-    // Se este endereço não tiver comprado este item, adicione pedido a orders.json
     if (!orders.find((order) => order.buyer === newOrder.buyer.toString() && order.itemID === newOrder.itemID)) {
       orders.push(newOrder);
-      await writeFile("../../../pages/api/order/orders.json", JSON.stringify(orders, null, 2));
+      console.log(orders);
+      await writeFile("./src/pages/api/order/orders.json", JSON.stringify(orders, null, 2));
+      
       res.status(200).json(orders);
     } else {
       res.status(400).send("O pedido já existe");
