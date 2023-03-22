@@ -3,25 +3,23 @@ import {
   clusterApiUrl,
   Connection,
   PublicKey,
-  Transaction,
-  SystemProgram,
-  LAMPORTS_PER_SOL,
+  Transaction
 } from "@solana/web3.js";
+import { createTransferCheckedInstruction, getAssociatedTokenAddress, getMint } from "@solana/spl-token"
 import BigNumber from "bignumber.js";
 import { NextApiRequest, NextApiResponse } from "next";
 import products from "../product/products.json"
 
-// Certifique-se de substituir isto pelo endereço de sua carteira!
-const sellerAddress = 'B1aLAAe4vW8nSQCetXnYqJfRxzTjnbooczwkUJAr7yMS'
+const sellerAddress = 'B4MEn4i4ZxwtszeJLLihvSuyEEBGKZPz4eh2D2XvVQDa'
 const sellerPublicKey = new PublicKey(sellerAddress);
+const usdcAddress = new PublicKey('Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr');
+
 
 const createTransaction = async (request: NextApiRequest, response: NextApiResponse) => {
   try {
-    // Extraia os dados da transação do órgão solicitante
     const { buyer, orderID, itemID } = request.body;
     console.log(buyer, orderID, itemID);
 
-    // Se não tivermos algo que precisamos, paramos!
     if (!buyer) {
       return response.status(400).json({
         message: "Missing buyer addresponses",
@@ -34,9 +32,7 @@ const createTransaction = async (request: NextApiRequest, response: NextApiRespo
       });
     }
 
-    // Pegue o preço do item de products.json usando itemID
     const itemPrice = products.find((item) => item.id === itemID)?.price;
-    console.log(itemPrice);
 
     if (!itemPrice) {
       return response.status(404).json({
@@ -45,36 +41,42 @@ const createTransaction = async (request: NextApiRequest, response: NextApiRespo
     }
 
 
-    // Converta nosso preço para o formato correto
+
     const bigAmount = BigNumber(itemPrice);
     const buyerPublicKey = new PublicKey(buyer);
     const network = WalletAdapterNetwork.Devnet;
     const endpoint = clusterApiUrl(network);
     const connection = new Connection(endpoint);
 
-    //Um blockhash (hash de bloco) é como uma identificação para um bloco. Ele permite que você identifique cada bloco.
+
+    const buyerUsdcAddress = await getAssociatedTokenAddress(usdcAddress, buyerPublicKey);
+    const shopUsdcAddress = await getAssociatedTokenAddress(usdcAddress, sellerPublicKey);
     const { blockhash } = await connection.getLatestBlockhash("finalized");
 
+    const usdcMint = await getMint(connection, usdcAddress);
 
-    // As duas primeiras coisas que precisamos - uma identificação recente do bloco 
-    // e a chave pública do pagador da taxa 
+
+    
     const tx = new Transaction({
-      recentBlockhash: blockhash,
+      blockhash: blockhash,
       feePayer: buyerPublicKey,
+      lastValidBlockHeight: 300
+
     });
 
-    // Esta é a "ação" que a transação realizará
-    // Vamos apenas transferir algum SOL
-    const transferInstruction = SystemProgram.transfer({
-      fromPubkey: buyerPublicKey,
-      // Lamports são a menor unidade do SOL, como a Gwei é da Ethereum
-      lamports: bigAmount.multipliedBy(LAMPORTS_PER_SOL).toNumber(), 
-      toPubkey: sellerPublicKey,
-    });
+   
+    
+    const transferInstruction = createTransferCheckedInstruction(
+      buyerUsdcAddress,
+      usdcAddress,
+      shopUsdcAddress,
+      buyerPublicKey,
+      bigAmount.toNumber() * 10 ** (usdcMint).decimals,
+      usdcMint.decimals
 
-    // Estamos acrescentando mais instruções à transação
+    )
+
     transferInstruction.keys.push({
-      // Usaremos nosso OrderId para encontrar esta transação mais tarde
       pubkey: new PublicKey(orderID), 
       isSigner: false,
       isWritable: false,
@@ -83,7 +85,6 @@ const createTransaction = async (request: NextApiRequest, response: NextApiRespo
     tx.add(transferInstruction);
 
 
-    // Formatando nossa transação
     const serializedTransaction = tx.serialize({
       requireAllSignatures: false,
     });

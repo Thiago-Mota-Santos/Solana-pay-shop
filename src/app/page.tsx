@@ -5,11 +5,7 @@ import SolanaConnect from "./wallet/SolanaConnect";
 import { PublicKey } from "@solana/web3.js";
 import { useWallet } from "@solana/wallet-adapter-react";
 import Product from "./components/products";
-import {
-  useWalletModal,
-  WalletMultiButton,
-} from "@solana/wallet-adapter-react-ui";
-import RootLayout from "./layout";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useEffect, useState } from "react";
 
 interface ProductProps {

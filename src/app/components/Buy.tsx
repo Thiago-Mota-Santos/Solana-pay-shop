@@ -1,18 +1,34 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, CSSProperties } from "react";
 import { Keypair, Transaction } from "@solana/web3.js";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { InfinitySpin } from "react-loader-spinner";
 import IPFSDownload from "./IpfsDownload";
+import { findReference, FindReferenceError } from "@solana/pay";
+import { InfinitySpin } from "react-loader-spinner";
+import MoonLoader from "react-spinners/MoonLoader";
+import { addOrder } from "../lib/api";
 
-export default function Buy({ itemID }) {
+interface BuyProps {
+  itemID: number;
+}
+
+const STATUS = {
+  Initial: "Initial",
+  Submitted: "Submitted",
+  Paid: "Paid",
+};
+
+const override: CSSProperties = {
+  marginRight: "55px",
+  cursor: "not-allowed",
+};
+
+export default function Buy({ itemID }: BuyProps) {
   const { connection } = useConnection();
   const { publicKey, sendTransaction } = useWallet();
-  const orderID = useMemo(() => Keypair.generate().publicKey, []); // Public key used to identify the order
+  const orderID = useMemo(() => Keypair.generate().publicKey, []);
 
-  const [paid, setPaid] = useState(null);
-  const [loading, setLoading] = useState(false); // Loading state of all above
-
-  // useMemo é um gancho do React que só computa o valor se as dependências mudarem
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState(STATUS.Initial);
 
   const order = useMemo(
     () => ({
@@ -23,9 +39,6 @@ export default function Buy({ itemID }) {
     [publicKey, orderID, itemID]
   );
 
-  console.log(order);
-
-  // Pegue o objeto transação do servidor
   const processTransaction = async () => {
     setLoading(true);
     const txResponse = await fetch(`api/transation/route`, {
@@ -33,34 +46,58 @@ export default function Buy({ itemID }) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        buyer: publicKey?.toString(),
-        orderID: orderID.toString(),
-        itemID: itemID,
-      }),
+      body: JSON.stringify(order),
     });
     const txData = await txResponse.json();
-    console.log(txData);
-    // Nós criamos um objeto transação
     const tx = Transaction.from(Buffer.from(txData.transaction, "base64"));
 
     console.log("Tx data is", tx);
 
-    // Tente enviar a transação para a rede
     try {
-      // Envie a transação para a rede
       const txHash = await sendTransaction(tx, connection);
       console.log(
         `Transação enviada: https://solscan.io/tx/${txHash}?cluster=devnet`
       );
-      // Mesmo que isso possa falhar, por ora, vamos apenas torná-lo realidade
-      setPaid(true);
+      setStatus(STATUS.Submitted);
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (status === STATUS.Submitted) {
+      setLoading(true);
+      const interval = setInterval(async () => {
+        try {
+          const result = await findReference(connection, orderID);
+          console.log(`TX reference ${result.confirmationStatus}`);
+
+          if (
+            result.confirmationStatus === "confirmed" ||
+            result.confirmationStatus === "finalized"
+          ) {
+            clearInterval(interval);
+            setStatus(STATUS.Paid);
+            setLoading(false);
+            addOrder(order);
+            alert("Obrigado por sua compra!");
+          }
+        } catch (e) {
+          if (e instanceof FindReferenceError) {
+            return null;
+          }
+          console.log(`Error: ${e}`);
+        } finally {
+          setLoading(false);
+        }
+      }, 1000);
+      return () => {
+        clearInterval(interval);
+      };
+    }
+  }, [status]);
 
   if (!publicKey) {
     return (
@@ -71,15 +108,15 @@ export default function Buy({ itemID }) {
   }
 
   if (loading) {
-    return <InfinitySpin color="gray" />;
+    return <MoonLoader cssOverride={override} size={30} color="gray" />;
   }
 
   return (
     <div>
-      {paid ? (
+      {status === STATUS.Paid ? (
         <IPFSDownload
-          filename="emojis.zip"
-          hash="QmWWH69mTL66r3H8P4wUn24t1L5pvdTJGUTKBqT11KCHS5"
+          filename="JojoArts.zip"
+          hash="QmPN21PtsnAwcaU9XbmEVieH2ScgXKwTSM4sAZHemfKK7Q"
         />
       ) : (
         <button
