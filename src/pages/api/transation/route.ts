@@ -18,7 +18,6 @@ const usdcAddress = new PublicKey('Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr'
 const createTransaction = async (request: NextApiRequest, response: NextApiResponse) => {
   try {
     const { buyer, orderID, itemID } = request.body;
-    console.log(buyer, orderID, itemID);
 
     if (!buyer) {
       return response.status(400).json({

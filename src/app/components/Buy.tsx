@@ -1,11 +1,10 @@
+"use client";
 import React, { useState, useMemo, useEffect, CSSProperties } from "react";
 import { Keypair, Transaction } from "@solana/web3.js";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import IPFSDownload from "./IpfsDownload";
 import { findReference, FindReferenceError } from "@solana/pay";
-import { InfinitySpin } from "react-loader-spinner";
 import MoonLoader from "react-spinners/MoonLoader";
-import { addOrder } from "../lib/api";
 
 interface BuyProps {
   itemID: number;
@@ -17,7 +16,7 @@ const STATUS = {
   Paid: "Paid",
 };
 
-const override: CSSProperties = {
+export const override: CSSProperties = {
   marginRight: "55px",
   cursor: "not-allowed",
 };
@@ -81,8 +80,6 @@ export default function Buy({ itemID }: BuyProps) {
             clearInterval(interval);
             setStatus(STATUS.Paid);
             setLoading(false);
-            // addOrder(order);
-            alert("Obrigado por sua compra!");
           }
         } catch (e) {
           if (e instanceof FindReferenceError) {
@@ -95,6 +92,7 @@ export default function Buy({ itemID }: BuyProps) {
       }, 1000);
       return () => {
         clearInterval(interval);
+        alert("Obrigado por sua compra!");
       };
     }
   }, [status]);
